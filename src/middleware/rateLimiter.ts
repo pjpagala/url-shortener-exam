@@ -17,7 +17,9 @@ export function rateLimitMiddleware(
   rateLimits[ip] = rateLimits[ip].filter((t) => now - t < 60000);
 
   if (rateLimits[ip].length >= 10) {
-    res.status(429).json({ error: "Rate limit exceeded" });
+    const oldest = rateLimits[ip][0];
+    const retryAfter = Math.ceil((60000 - (now - oldest)) / 1000);
+    res.status(429).json({ error: "Rate limit exceeded. Try again later.","retry_after_seconds": retryAfter });
     return;
   }
 
