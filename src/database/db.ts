@@ -21,7 +21,9 @@ export function initDatabase(): void {
       created_at TEXT NOT NULL,
       visit_count INTEGER DEFAULT 0,
       last_visited_at TEXT
-    )
+    );
+    -- Enhancement (C): index on visit_count speeds up ORDER BY visit_count DESC LIMIT 10
+    CREATE INDEX IF NOT EXISTS idx_urls_visit_count ON urls (visit_count DESC);
   `);
 }
 
