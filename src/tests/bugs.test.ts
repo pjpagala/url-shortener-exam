@@ -2,8 +2,6 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../app';
 import { db } from '../database/db';
-import fs from 'fs';
-import path from 'path';
 
 beforeEach(() => {
   db.exec('DELETE FROM urls');
