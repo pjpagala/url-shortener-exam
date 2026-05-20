@@ -28,6 +28,10 @@ export function shortenHandler(req: Request, res: Response): void {
 export function statsHandler(req: Request, res: Response): void {
   const code = req.params.code;
   const stats = getUrlStats(code as string);
+  if (!stats) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
   res.json(stats);
 }
 
