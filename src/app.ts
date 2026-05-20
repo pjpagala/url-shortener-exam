@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { ErrorRequestHandler } from 'express';
 import { registerRoutes } from './routes';
 import { initDatabase } from './database/db';
 
@@ -12,5 +12,17 @@ app.get('/health', (_req, res) => {
 
 initDatabase();
 registerRoutes(app);
+
+/**
+ * Enhancement (E): global error handler — normalises any unhandled Express
+ * errors into a consistent JSON response. Must be registered after all routes
+ * and have exactly 4 parameters so Express recognises it as an error handler.
+ */
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+};
+
+app.use(errorHandler);
 
 export { app };
