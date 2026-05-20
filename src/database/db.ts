@@ -2,6 +2,16 @@ import Database from "better-sqlite3";
 
 const db = new Database("urls.db");
 
+/**
+ * Initialises the SQLite database schema.
+ *
+ * Creates the `urls` table if it does not already exist with:
+ * - `short_code` — unique, non-null identifier for the shortened URL
+ * - `original_url` — the full destination URL
+ * - `created_at` — ISO 8601 creation timestamp
+ * - `visit_count` — running total of redirects (defaults to 0)
+ * - `last_visited_at` — ISO 8601 timestamp of the most recent visit
+ */
 export function initDatabase(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS urls (
