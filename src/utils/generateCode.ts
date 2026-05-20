@@ -1,8 +1,11 @@
-export function generateCode(): string {
-  let result = "";
+import { randomBytes } from "crypto";
+
+export function generateCode(length = 7): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const bytes = randomBytes(length);
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length];
   }
   return result;
 }
