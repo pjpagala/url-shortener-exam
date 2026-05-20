@@ -23,14 +23,20 @@ export function shortenHandler(req: Request, res: Response): void {
     return;
   }
 
-  try{
+  try {
     new URL(url);
-  } catch { 
+  } catch {
     res.status(400).json({ error: "Invalid URL format" });
     return;
   }
-  const result = createShortUrl(url);
-  res.status(201).json(result);
+
+  // Enhancement (D): catch unexpected DB errors and return a clean 500
+  try {
+    const result = createShortUrl(url);
+    res.status(201).json(result);
+  } catch {
+    res.status(500).json({ error: "Failed to create short URL" });
+  }
 }
 
 /**
