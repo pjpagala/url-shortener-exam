@@ -6,6 +6,7 @@ import {
   getUrlByCode,
   recordVisit,
   getTopUrls,
+  type TopUrlRow,
 } from '../../services/urlService';
 
 beforeAll(() => {

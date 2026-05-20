@@ -10,6 +10,9 @@ interface UrlRow {
   last_visited_at: string | null;
 }
 
+/** Maximum attempts to find a unique short code before giving up. */
+const MAX_RETRIES = 10;
+
 /**
  * Creates a shortened URL entry in the database.
  *
@@ -19,20 +22,30 @@ interface UrlRow {
  * - Returns `short_code`, `short_url`, `original_url`, and `created_at`
  * - Retries on UNIQUE constraint collision until a free code is found
  *
+ * Enhancement (B): `short_url` uses `BASE_URL` env var instead of hardcoded
+ * `localhost` so the value is correct in staging/production environments.
+ * Enhancement (G): retry loop is capped at `MAX_RETRIES` to prevent an
+ * infinite loop in the (extremely unlikely) event of repeated collisions.
+ *
  * @param url - A validated absolute URL string
  * @returns The created short URL record
+ * @throws If a unique code cannot be generated within `MAX_RETRIES` attempts
  */
 export function createShortUrl(url: string) {
   const now = new Date().toISOString();
-  let code!: string; // definite assignment assertion
+  const baseUrl = process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
 
-  // Retry on UNIQUE constraint collision until a free code is found
-  while (true) {
-    code = generateCode();
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const code = generateCode();
     try {
       db.prepare("INSERT INTO urls (short_code, original_url, created_at) VALUES (?, ?, ?)")
         .run(code, url, now);
-      break;
+      return {
+        short_code: code,
+        short_url: `${baseUrl}/${code}`,
+        original_url: url,
+        created_at: now,
+      };
     } catch (error) {
       if ((error as any).code !== "SQLITE_CONSTRAINT_UNIQUE") {
         throw error;
@@ -40,12 +53,7 @@ export function createShortUrl(url: string) {
     }
   }
 
-  return {
-    short_code: code,
-    short_url: `http://localhost:${process.env.PORT || 3000}/${code}`,
-    original_url: url,
-    created_at: now,
-  };
+  throw new Error("Failed to generate a unique short code after maximum retries");
 }
 
 /**
@@ -119,10 +127,18 @@ export function recordVisit(code: string): void {
  *
  * @returns Array of up to 10 URL rows
  */
-export function getTopUrls() {
+/** Shape of a row returned by {@link getTopUrls}. */
+export interface TopUrlRow {
+  short_code: string;
+  original_url: string;
+  visit_count: number;
+  last_visited_at: string | null;
+}
+
+export function getTopUrls(): TopUrlRow[] {
   return db
     .prepare(
       "SELECT short_code, original_url, visit_count, last_visited_at FROM urls WHERE visit_count > 0 ORDER BY visit_count DESC LIMIT 10"
     )
-    .all();
+    .all() as TopUrlRow[];
 }
