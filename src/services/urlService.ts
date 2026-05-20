@@ -65,16 +65,12 @@ export function getUrlByCode(code: string): UrlRow | undefined {
 
 export function recordVisit(code: string): void {
   db.prepare(
-    "UPDATE urls SET visit_count = visit_count + 1, last_visited_at = ? , WHERE short_code = ?"
+    "UPDATE urls SET visit_count = visit_count + 1, last_visited_at = ? WHERE short_code = ?"
   ).run(new Date().toISOString(), code);
 }
 
 export function getTopUrls() {
-  const rows = db.prepare("SELECT * FROM urls").all() as UrlRow[];
-
-  rows.sort((a, b) => b.visit_count - a.visit_count);
-
-  const top = rows.slice(0, 10);
-
-  return top;
+  return db
+    .prepare("SELECT * FROM urls ORDER BY visit_count DESC LIMIT 10")
+    .all() as UrlRow[];
 }
